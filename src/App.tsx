@@ -1,24 +1,27 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import "./App.css";
+import Autocomplete from "./components/Autocomplete";
+import { Item } from "./components/Autocomplete/Autocomplete";
 
 function App() {
+  const [selectedItem, setSelectedItem] = React.useState<Item | null>(null);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div
+      style={{
+        width: "100%",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <h1>Autocomplete Component</h1>
+      <p>Selected option: {selectedItem ? selectedItem?.name : ""}</p>
+      <Autocomplete
+        selectedItem={selectedItem}
+        setSelectedItem={setSelectedItem}
+      />
     </div>
   );
 }

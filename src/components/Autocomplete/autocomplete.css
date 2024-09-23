@@ -1,0 +1,47 @@
+.autocomplete-container {
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.autocomplete-input {
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  padding-left: 14px;
+  padding-right: 14px;
+  position: relative;
+}
+
+.options-container {
+  width: 100%;
+  max-width: 350px;
+  position: absolute;
+  top: 40px;
+  background-color: white;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+}
+
+.option-container {
+  width: 100%;
+  background-color: white;
+  box-sizing: border-box;
+  padding: 10px 14px;
+}
+
+.option-container:hover,
+.option-container-highlighted {
+  width: 100%;
+  background-color: #e8e8e8;
+  box-sizing: border-box;
+  padding: 10px 14px;
+}
+
+.option-container-selected {
+  width: 100%;
+  background-color: #b7d9fb;
+  box-sizing: border-box;
+  padding: 10px 14px;
+}
