@@ -13,6 +13,23 @@ interface AutocompleteProps {
   options: Item[];
 }
 
+const getHighlightedText = (text: string, highlight: string) => {
+  const parts = text.split(new RegExp(`(${highlight})`, "gi"));
+  return (
+    <span>
+      {parts.map((part, index) =>
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <span key={index} style={{ fontWeight: "bold" }}>
+            {part}
+          </span>
+        ) : (
+          part
+        )
+      )}
+    </span>
+  );
+};
+
 const Autocomplete: React.FC<AutocompleteProps> = ({
   selectedItem,
   setSelectedItem,
@@ -254,7 +271,7 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
                 }}
               >
                 <p style={{ margin: 0, padding: 0, fontSize: 14 }}>
-                  {item?.name}
+                  {getHighlightedText(item.name, debouncedSearchText)}
                 </p>
               </div>
             ))
