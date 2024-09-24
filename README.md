@@ -34,3 +34,7 @@ npm install or yarn install
 npm start or yarn start
 
 The project will be served at `http://localhost:3000`.
+
+### Notes
+
+1. Scroll view to change options position
