@@ -18,10 +18,19 @@
 .options-container {
   width: 100%;
   max-width: 350px;
+  max-height: 240px;
   position: absolute;
   top: 40px;
   background-color: white;
   box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 99;
+}
+
+.options-container-above {
+  top: auto;
+  bottom: 40px;
 }
 
 .option-container {
@@ -44,4 +53,21 @@
   background-color: #b7d9fb;
   box-sizing: border-box;
   padding: 10px 14px;
+}
+
+.option-container-selected-highlighted {
+  width: 100%;
+  background-color: #cad9e8;
+  box-sizing: border-box;
+  padding: 10px 14px;
+}
+
+.close {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #767676;
+  font-size: 16px;
 }
