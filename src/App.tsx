@@ -1,13 +1,68 @@
 import React from "react";
 import "./App.css";
 import Autocomplete from "./components/Autocomplete";
-import { Item } from "./components/Autocomplete/Autocomplete";
-import { mockData } from "./mockData";
+import { useDebounce } from "./hooks";
+
+interface Countries {
+  name: {
+    common: string;
+    official: string;
+    nativeName: {
+      eng: {
+        common: string;
+        official: string;
+      };
+    };
+  };
+}
 
 function App() {
-  const [selectedItem, setSelectedItem] = React.useState<Item | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [selectedItem, setSelectedItem] = React.useState<Countries | null>(
+    null
+  );
+  const [inputValue, setInputValue] = React.useState<string>("");
+  const [options, setOptions] = React.useState<Countries[]>([]);
 
-  const options = mockData;
+  const debouncedInput = useDebounce(inputValue, 300);
+
+  React.useEffect(() => {
+    //GET OPTIONS WITHOUT FILTER
+    // getOptions();
+
+    //GET OPTIONS WITH FILTER
+    getOptions(debouncedInput);
+  }, [debouncedInput]);
+
+  //GET OPTIONS WITHOUT FILTER
+  // const getOptions = () => {
+  //   setIsLoading(true);
+  //   fetch(`https://restcountries.com/v3.1/all?fields=name`)
+  //     .then((response) => response.json())
+  //     .then((json) => {
+  //       setOptions(json);
+  //       setIsLoading(false);
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error:", error);
+  //       setIsLoading(false);
+  //     });
+  // };
+
+  //GET OPTIONS WITH FILTER
+  const getOptions = (debouncedText: string) => {
+    setIsLoading(true);
+    fetch(`https://restcountries.com/v3.1/name/${debouncedText}?fields=name`)
+      .then((response) => response.json())
+      .then((json) => {
+        setOptions(json);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        setIsLoading(false);
+      });
+  };
 
   return (
     <div
@@ -22,12 +77,22 @@ function App() {
       }}
     >
       <h1>Autocomplete Component</h1>
-      <p>Selected option: {selectedItem ? selectedItem?.name : ""}</p>
       <Autocomplete
-        selectedItem={selectedItem}
-        setSelectedItem={setSelectedItem}
+        value={selectedItem}
+        setValue={setSelectedItem}
+        inputValue={inputValue}
+        setInputValue={setInputValue}
         options={options}
+        keyField={(item) => item?.name?.common}
+        labelField={(item) => item?.name?.common}
+        isLoading={isLoading} //COMENT IF OPTIONS HAS NO FILTER
       />
+      <p>Selected Country:</p>
+      {selectedItem && (
+        <pre style={{ marginBottom: 20 }}>
+          {JSON.stringify(selectedItem, null, 2)}
+        </pre>
+      )}
     </div>
   );
 }

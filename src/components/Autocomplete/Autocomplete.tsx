@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./autocomplete.css";
-import { useDebounce } from "../../hooks";
 
-export interface Item {
-  id: number;
-  name: string;
-}
-
-interface AutocompleteProps {
-  selectedItem: Item | null;
-  setSelectedItem: (item: Item | null) => void;
-  options: Item[];
+interface AutocompleteProps<T> {
+  value: T | null;
+  setValue: (item: T | null) => void;
+  inputValue: string;
+  setInputValue: (inputValue: string) => void;
+  options: T[];
+  keyField: (item: T) => string | number;
+  labelField: (item: T) => string;
+  isLoading?: boolean;
 }
 
 const getHighlightedText = (text: string, highlight: string) => {
@@ -30,14 +29,18 @@ const getHighlightedText = (text: string, highlight: string) => {
   );
 };
 
-const Autocomplete: React.FC<AutocompleteProps> = ({
-  selectedItem,
-  setSelectedItem,
+const Autocomplete = <T extends {}>({
+  value,
+  setValue,
+  inputValue,
+  setInputValue,
   options,
-}) => {
-  const [inputValue, setInputValue] = useState<string>("");
-  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  keyField,
+  labelField,
+  isLoading,
+}: AutocompleteProps<T>) => {
+  const [filteredItems, setFilteredItems] = useState<T[]>([]);
+  // const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [isOptionsAbove, setIsOptionsAbove] = useState<boolean>(false);
@@ -46,34 +49,64 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const optionsRef = useRef<HTMLDivElement | null>(null);
 
-  const debouncedSearchText = useDebounce(inputValue, 300);
+  // useEffect(() => {
+  //   if (inputValue.length > 0) {
+  //     setIsLoading(true);
+  //     const filtered = options.filter((item) =>
+  //       (labelField(item) as string)
+  //         .toLowerCase()
+  //         .includes(inputValue.toLowerCase())
+  //     );
+  //     setFilteredItems(filtered);
+  //     setIsLoading(false);
+  //   } else {
+  //     setFilteredItems(options);
+  //   }
+  // }, [inputValue, options, labelField]);
 
-  const fetchItems = useCallback(
-    async (query?: string): Promise<Item[]> => {
-      setIsLoading(true);
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          let result: any;
-          if (query) {
-            result = options.filter((item) =>
-              item.name.toLowerCase().includes(query.toLowerCase())
-            );
-          } else {
-            result = options;
-          }
-          resolve(result);
-          setIsLoading(false);
-        }, 500);
-      });
-    },
-    [options]
-  );
+  useEffect(() => {
+    if (options.length > 0) {
+      const filtered = options.filter((item) =>
+        (labelField(item) as string)
+          .toLowerCase()
+          .includes(inputValue.toLowerCase())
+      );
+      setFilteredItems(filtered);
+    } else {
+      setFilteredItems([]);
+    }
+    // if (filteredItems.length === 0) {
+    //   // setIsLoading(true);
+    //   if (options.length > 0) {
+    //     const filtered = options.filter((item) =>
+    //       (labelField(item) as string)
+    //         .toLowerCase()
+    //         .includes(inputValue.toLowerCase())
+    //     );
+    //     setFilteredItems(filtered);
+    //   } else {
+    //     setFilteredItems([]);
+    //   }
+    // } else {
+    //   if (options.length > 0) {
+    //     const filtered = options.filter((item) =>
+    //       (labelField(item) as string)
+    //         .toLowerCase()
+    //         .includes(inputValue.toLowerCase())
+    //     );
+    //     setFilteredItems(filtered);
+    //   } else {
+    //     setFilteredItems([]);
+    //   }
+    //   // setIsLoading(false);
+    // }
+  }, [inputValue, labelField, options]);
 
   const setState = useCallback(
-    (item: Item | null) => {
-      setSelectedItem(item);
+    (item: T | null) => {
+      setValue(item);
     },
-    [setSelectedItem]
+    [setValue]
   );
 
   useEffect(() => {
@@ -83,8 +116,11 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
         !containerRef.current.contains(event.target as Node)
       ) {
         setShowOptions(false);
-        if (selectedItem) {
-          setInputValue(selectedItem?.name);
+        if (value) {
+          const valueInput = labelField(value);
+          if (typeof valueInput === "string") {
+            setInputValue(valueInput);
+          }
         }
       }
     };
@@ -92,38 +128,25 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [selectedItem]);
+  }, [labelField, setInputValue, value]);
 
   useEffect(() => {
-    if (debouncedSearchText.length > 0) {
-      fetchItems(debouncedSearchText).then((items) => {
-        setFilteredItems(items);
-      });
-    } else {
-      setFilteredItems(options);
-    }
-  }, [debouncedSearchText, fetchItems, options]);
-
-  useEffect(() => {
-    if (selectedItem && !inputValue) {
+    if (value && !inputValue) {
       setState(null);
       setHighlightedIndex(0);
     }
-  }, [inputValue, selectedItem, setState]);
+  }, [inputValue, value, setState]);
 
   useEffect(() => {
-    if (selectedItem) {
-      if (selectedItem?.name !== inputValue) {
-        setShowOptions(true);
-      }
+    if (value) {
       const selectedIndex = filteredItems.findIndex(
-        (item) => item.id === selectedItem.id
+        (item) => labelField(item) === labelField(value)
       );
       setHighlightedIndex(selectedIndex !== -1 ? selectedIndex : 0);
     } else {
       setHighlightedIndex(0);
     }
-  }, [inputValue, filteredItems, selectedItem]);
+  }, [inputValue, filteredItems, value, labelField]);
 
   useEffect(() => {
     const checkPosition = () => {
@@ -173,48 +196,25 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
     }
   }, [highlightedIndex]);
 
-  const handleSelect = (item: Item) => {
-    setInputValue(item.name);
-    setSelectedItem(item);
+  const handleSelect = (item: T) => {
+    setInputValue(labelField(item));
+    setValue(item);
     setShowOptions(false);
     setHighlightedIndex(-1);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
-      setHighlightedIndex((prevIndex) =>
-        prevIndex < filteredItems.length - 1 ? prevIndex + 1 : 0
-      );
-    } else if (e.key === "ArrowUp") {
-      setHighlightedIndex((prevIndex) =>
-        prevIndex > 0 ? prevIndex - 1 : filteredItems.length - 1
-      );
-    } else if (e.key === "Enter") {
-      if (highlightedIndex >= 0 && filteredItems[highlightedIndex]) {
-        handleSelect(filteredItems[highlightedIndex]);
-      }
-    }
-  };
-
-  const handleInputClick = () => {
+  const handleInputClick = (e: React.MouseEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    if (showOptions) return;
     setFilteredItems(options);
     setShowOptions(true);
-    if (selectedItem) {
+    if (value) {
       const selectedIndex = options.findIndex(
-        (item) => item.id === selectedItem.id
+        (item) => keyField(item) === keyField(value)
       );
       setHighlightedIndex(selectedIndex !== -1 ? selectedIndex : 0);
     } else {
       setHighlightedIndex(0);
-    }
-  };
-
-  const onDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setInputValue("");
-    setShowOptions(true);
-    if (inputRef.current) {
-      inputRef.current.focus();
     }
   };
 
@@ -225,17 +225,39 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
         className="autocomplete-input"
         type="text"
         value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          if (!showOptions && e.target.value) {
+            setShowOptions(true);
+          }
+        }}
         onClick={handleInputClick}
-        onKeyDown={handleKeyDown}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            setHighlightedIndex((prevIndex) =>
+              prevIndex < filteredItems.length - 1 ? prevIndex + 1 : 0
+            );
+          } else if (e.key === "ArrowUp") {
+            setHighlightedIndex((prevIndex) =>
+              prevIndex > 0 ? prevIndex - 1 : filteredItems.length - 1
+            );
+          } else if (e.key === "Enter") {
+            if (highlightedIndex >= 0 && filteredItems[highlightedIndex]) {
+              handleSelect(filteredItems[highlightedIndex]);
+            }
+          }
+        }}
         placeholder="Search..."
       />
-      {(selectedItem || inputValue) && (
+      {(value || inputValue) && (
         <span
           className="close"
           onMouseDown={(e) => {
             e.preventDefault();
-            onDelete(e);
+            e.stopPropagation();
+            setInputValue("");
+            setShowOptions(false);
+            if (inputRef.current) inputRef.current.focus();
           }}
         >
           &#10005;
@@ -250,14 +272,16 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
         >
           {isLoading ? (
             <div className="option-container">
-              <p style={{ margin: 0, padding: 0, fontSize: 14 }}>loading...</p>
+              <p style={{ margin: 0, padding: 0, fontSize: 14, color: "gray" }}>
+                loading...
+              </p>
             </div>
-          ) : (
+          ) : filteredItems && filteredItems.length > 0 ? (
             filteredItems.map((item, index) => (
               <div
-                key={`${item?.id}-${index}`}
+                key={keyField(item)}
                 className={
-                  selectedItem?.id === item?.id
+                  value && keyField(value) === keyField(item)
                     ? index === highlightedIndex
                       ? "option-container-selected-highlighted"
                       : "option-container-selected"
@@ -270,11 +294,24 @@ const Autocomplete: React.FC<AutocompleteProps> = ({
                   handleSelect(item);
                 }}
               >
-                <p style={{ margin: 0, padding: 0, fontSize: 14 }}>
-                  {getHighlightedText(item.name, debouncedSearchText)}
+                <p
+                  style={{
+                    margin: 0,
+                    padding: 0,
+                    fontSize: 14,
+                    userSelect: "none",
+                  }}
+                >
+                  {getHighlightedText(labelField(item), inputValue)}
                 </p>
               </div>
             ))
+          ) : (
+            <div className="option-container">
+              <p style={{ margin: 0, padding: 0, fontSize: 14, color: "gray" }}>
+                No items
+              </p>
+            </div>
           )}
         </div>
       )}

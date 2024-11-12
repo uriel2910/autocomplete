@@ -26,6 +26,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 99;
+  cursor: pointer;
 }
 
 .options-container-above {
